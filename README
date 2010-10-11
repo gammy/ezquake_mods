@@ -1,6 +1,9 @@
 These files should /overwrite/ their respective counterparts in the ezquake
 source.
 
+If these instructions are incorrect (I'm writing them in a hurry) just
+update this file with the correct way to do it..
+
 To quickly get ezquake up and running "from nothing" with these files
 =====================================================================
 # Original quake
