@@ -13,6 +13,8 @@
 static int sdl_snd_initialized;
 static int stfu;
 
+
+
 // Callback 
 static void paint_audio(void *unused, Uint8 *stream, int len)
 {
@@ -129,18 +131,18 @@ qbool SNDDMA_Init_SDL(void)
 
 	memset((void *) shm, 0, sizeof(shm));
 
-//	shm->buffer = calloc(512, sizeof(char));
-//	if(shm->buffer == NULL)
-//		abort();
 
 	shm->format.width    = (obtained.format & 0xFF) / 8;
 	shm->format.speed    = obtained.freq;
 	shm->format.channels = obtained.channels;
-	//shm->samples         = obtained.samples * shm->format.channels;
-	shm->samples         = obtained.samples;
+	shm->samples         = obtained.samples * shm->format.channels;
+	//shm->samples         = obtained.samples * 2;
 	shm->sampleframes    = obtained.samples / shm->format.channels;
 	shm->samplepos       = 0;
-	shm->buffer = NULL;
+//	shm->buffer = NULL;
+//	shm->buffer = calloc(shm->sampleframes, sizeof(char));
+//	if(shm->buffer == NULL)
+//		abort();
 
 	sdl_snd_initialized = 1;
 
