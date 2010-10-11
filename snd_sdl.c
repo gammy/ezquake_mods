@@ -8,13 +8,14 @@
 
 static dma_t the_shm;
 static int snd_inited;
+static int stfu;
 
 static void paint_audio(void *unused, Uint8 *stream, int len)
 {
 	if ( shm ) {
 		shm->buffer = stream;
 		//shm->samplepos += len/(shm->samplebits/8)/2;
-		shm->samplepos += len/(shm->samples) / 2;
+		shm->samplepos += len / (shm->samples) / 2;
 		// Check for samplepos overflow?
 		S_PaintChannels (shm->samplepos);
 	}
@@ -23,10 +24,14 @@ static void paint_audio(void *unused, Uint8 *stream, int len)
 qbool SNDDMA_Init_SDL(void)
 {
 	SDL_AudioSpec desired, obtained;
+	stfu = 0;
 
 	snd_inited = 0;
 
 	char *audio_driver = Cvar_String("s_device");
+	int i;
+
+	Com_Printf("Selected driver: \"%s\"\n", audio_driver);
 
 	/* We manually call this internal SDL function since we want
 	 * control of the audio driver via the quake configuration.
@@ -120,11 +125,30 @@ qbool SNDDMA_Init_SDL(void)
 	shm->buffer          = NULL;
 
 	snd_inited = 1;
+
 	return 1;
 }
 
 int SNDDMA_GetDMAPos_SDL(void)
 {
+	SDL_audiostatus status = SDL_GetAudioStatus();
+
+	if(stfu == 1)
+		switch(status) {
+			case SDL_AUDIO_STOPPED:
+				Com_Printf("Audio: STOPPED\n");
+				break;
+			case SDL_AUDIO_PLAYING:
+				Com_Printf("Audio: PLAYING\n");
+				break;
+			case SDL_AUDIO_PAUSED:
+				Com_Printf("Audio: PAUSED\n");
+				break;
+		}
+
+	stfu = (stfu + 1) % 1024;
+
+
 	return shm->samplepos;
 }
 
