@@ -26,8 +26,24 @@ qbool SNDDMA_Init_SDL(void)
 
 	snd_inited = 0;
 
+	char *audio_driver = Cvar_String("s_device");
+
+	/* We manually call this internal SDL function since we want
+	 * control of the audio driver via the quake configuration.
+	 * Looking at the SDL source, this actually cannot return !0 - 
+	 * they allow it to pass through and die on SDL_OpenAudio. */
+	if(SDL_AudioInit(audio_driver) < 0) {
+		Com_Printf("SDL_AudioInit(\"%s\") failure: %s\n",
+			   audio_driver,
+			   SDL_GetError());
+		return(0);
+	}
+
 	/* Set up the desired format */
-	desired.freq = SND_Rate((int) s_khz.value);
+	desired.freq              = SND_Rate((int) s_khz.value);
+	desired.channels          = Cvar_Value("s_stereo") == 0 ? 1 : 2;
+	desired.samples           = 512;
+	desired.callback          = paint_audio;
 	unsigned int desired_bits = Cvar_Value("s_bits");
 
 	switch (desired_bits) {
@@ -43,18 +59,24 @@ qbool SNDDMA_Init_SDL(void)
 		default:
         		Con_Printf("Unknown number of audio bits: %d\n",
 								desired_bits);
-			return 0;
+			desired.format = AUDIO_S16SYS;
 	}
 
-	desired.channels = Cvar_Value("s_stereo") == 0 ? 1 : 2;
-	desired.samples = 512;
-	desired.callback = paint_audio;
+	Com_Printf("Requesting %s driver with %d-bit %s %dHz with %d samples.\n",
+		   audio_driver,
+		   desired_bits, 
+		   desired.channels == 1 ? "mono" : "stereo",
+		   desired.freq,
+		   desired.samples);
 	
 	/* Open the audio device */
 	if ( SDL_OpenAudio(&desired, &obtained) < 0 ) {
         	Con_Printf("A:Couldn't open SDL audio: %s\n", SDL_GetError());
 		return 0;
 	}
+	
+	Com_Printf("SDL_Audio [%s] initialized.\n", 
+		   audio_driver);
 
 	/* Make sure we can support the audio format */
 	switch (obtained.format) {
@@ -111,6 +133,7 @@ void SNDDMA_Shutdown_SDL(void)
 	if (snd_inited)
 	{
 		SDL_CloseAudio();
+		SDL_AudioQuit();
 		snd_inited = 0;
 	}
 }
