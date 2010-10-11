@@ -1,4 +1,8 @@
+/* Contains parts of snd_sdl.c from sdlquake and bits and pieces from ezquake's other
+   snd_*.c-files.
 
+   Cobbled together by gammy & will.
+*/
 #include <stdio.h>
 #include "SDL/SDL.h"
 #include "SDL/SDL_audio.h"
@@ -6,27 +10,33 @@
 #include "quakedef.h"
 #include "qsound.h"
 
-static dma_t the_shm;
-static int snd_inited;
+static int sdl_snd_initialized;
 static int stfu;
 
+static unsigned char dma[64*1024];
+
+// Callback 
 static void paint_audio(void *unused, Uint8 *stream, int len)
 {
-	if ( shm ) {
-		shm->buffer = stream;
-		//shm->samplepos += len/(shm->samplebits/8)/2;
-		shm->samplepos += len / (shm->samples) / 2;
-		// Check for samplepos overflow?
-		S_PaintChannels (shm->samplepos);
-	}
+	if(! shm)
+		return;
+	if(! sdl_snd_initialized)
+		return;
+
+	shm->buffer = stream;
+	Con_Printf("len = %d, samples = %d\n", len, shm->samples);
+	shm->samplepos += len / (shm->samples / 2);
+
+	// Check for samplepos overflow?
+	//S_PaintChannels (shm->samplepos);
 }
 
 qbool SNDDMA_Init_SDL(void)
 {
 	SDL_AudioSpec desired, obtained;
-	stfu = 0;
 
-	snd_inited = 0;
+	stfu = 0;
+	sdl_snd_initialized = 0;
 
 	char *audio_driver = Cvar_String("s_device");
 	int i;
@@ -109,22 +119,25 @@ qbool SNDDMA_Init_SDL(void)
 			memcpy(&obtained, &desired, sizeof(desired));
 			break;
 	}
-	SDL_PauseAudio(0);
 
-	/* Fill the audio DMA information block */
-	shm = &the_shm;
-	//shm->splitbuffer = 0;
-	//shm->samplebits = (obtained.format & 0xFF);
+	SDL_PauseAudio(0);
+	
+	// Fill dma with crap
+	for(i = 0; i < sizeof(dma); i++) 
+		dma[i] = 0xff; //rand();
+
+	memset((void *) shm, 0, sizeof(shm));
+
 	shm->format.width    = (obtained.format & 0xFF) / 8;
 	shm->format.speed    = obtained.freq;
 	shm->format.channels = obtained.channels;
-	shm->samples         = obtained.samples*shm->format.channels;
-	shm->sampleframes    = shm->samples;
+	//shm->samples         = obtained.samples * shm->format.channels;
+	shm->samples         = obtained.samples;
+	shm->sampleframes    = obtained.samples / shm->format.channels;
+	shm->buffer          = dma;
 	shm->samplepos       = 0;
-	//shm->submission_chunk = 1;
-	shm->buffer          = NULL;
 
-	snd_inited = 1;
+	sdl_snd_initialized = 1;
 
 	return 1;
 }
@@ -154,11 +167,11 @@ int SNDDMA_GetDMAPos_SDL(void)
 
 void SNDDMA_Shutdown_SDL(void)
 {
-	if (snd_inited)
+	if (sdl_snd_initialized)
 	{
 		SDL_CloseAudio();
 		SDL_AudioQuit();
-		snd_inited = 0;
+		sdl_snd_initialized = 0;
 	}
 }
 
