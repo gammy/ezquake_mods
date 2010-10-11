@@ -14,7 +14,7 @@ static void paint_audio(void *unused, Uint8 *stream, int len)
 	if ( shm ) {
 		shm->buffer = stream;
 		//shm->samplepos += len/(shm->samplebits/8)/2;
-		shm->samplepos += len/(shm->samples)/2;
+		shm->samplepos += len/(shm->samples) / 2;
 		// Check for samplepos overflow?
 		S_PaintChannels (shm->samplepos);
 	}
