@@ -13,8 +13,6 @@
 static int sdl_snd_initialized;
 static int stfu;
 
-static unsigned char dma[64*1024];
-
 // Callback 
 static void paint_audio(void *unused, Uint8 *stream, int len)
 {
@@ -24,11 +22,11 @@ static void paint_audio(void *unused, Uint8 *stream, int len)
 		return;
 
 	shm->buffer = stream;
-	Con_Printf("len = %d, samples = %d\n", len, shm->samples);
-	shm->samplepos += len / (shm->samples / 2);
+	//Con_Printf("len = %d, samples = %d\n", len, shm->samples);
+	shm->samplepos += len / 4 ; // (shm->samples / 2);
 
 	// Check for samplepos overflow?
-	//S_PaintChannels (shm->samplepos);
+	S_PaintChannels (shm->samplepos);
 }
 
 qbool SNDDMA_Init_SDL(void)
@@ -57,7 +55,7 @@ qbool SNDDMA_Init_SDL(void)
 	/* Set up the desired format */
 	desired.freq              = SND_Rate((int) s_khz.value);
 	desired.channels          = Cvar_Value("s_stereo") == 0 ? 1 : 2;
-	desired.samples           = 512;
+	desired.samples           = 2048;
 	desired.callback          = paint_audio;
 	unsigned int desired_bits = Cvar_Value("s_bits");
 
@@ -92,6 +90,13 @@ qbool SNDDMA_Init_SDL(void)
 	
 	Com_Printf("SDL_Audio [%s] initialized.\n", 
 		   audio_driver);
+	
+	Com_Printf("Got fmt 0x%x(%s)%s %dHz with %d samples.\n",
+		   obtained.format,
+		   obtained.format == desired.format ?  "desired" : "not desired",
+		   obtained.channels == 1 ? "mono" : "stereo",
+		   obtained.freq,
+		   obtained.samples);
 
 	/* Make sure we can support the audio format */
 	switch (obtained.format) {
@@ -121,12 +126,12 @@ qbool SNDDMA_Init_SDL(void)
 	}
 
 	SDL_PauseAudio(0);
-	
-	// Fill dma with crap
-	for(i = 0; i < sizeof(dma); i++) 
-		dma[i] = 0xff; //rand();
 
 	memset((void *) shm, 0, sizeof(shm));
+
+//	shm->buffer = calloc(512, sizeof(char));
+//	if(shm->buffer == NULL)
+//		abort();
 
 	shm->format.width    = (obtained.format & 0xFF) / 8;
 	shm->format.speed    = obtained.freq;
@@ -134,8 +139,8 @@ qbool SNDDMA_Init_SDL(void)
 	//shm->samples         = obtained.samples * shm->format.channels;
 	shm->samples         = obtained.samples;
 	shm->sampleframes    = obtained.samples / shm->format.channels;
-	shm->buffer          = dma;
 	shm->samplepos       = 0;
+	shm->buffer = NULL;
 
 	sdl_snd_initialized = 1;
 
@@ -144,22 +149,23 @@ qbool SNDDMA_Init_SDL(void)
 
 int SNDDMA_GetDMAPos_SDL(void)
 {
-	SDL_audiostatus status = SDL_GetAudioStatus();
+	if(stfu == 1) {
+		SDL_audiostatus status = SDL_GetAudioStatus();
 
-	if(stfu == 1)
 		switch(status) {
 			case SDL_AUDIO_STOPPED:
-				Com_Printf("Audio: STOPPED\n");
+				Com_Printf("Audio (pos %d): STOPPED\n", shm->samplepos);
 				break;
 			case SDL_AUDIO_PLAYING:
-				Com_Printf("Audio: PLAYING\n");
+				Com_Printf("Audio (pos %d): PLAYING\n", shm->samplepos);
 				break;
 			case SDL_AUDIO_PAUSED:
-				Com_Printf("Audio: PAUSED\n");
+				Com_Printf("Audio (pos %d): PAUSED\n", shm->samplepos);
 				break;
 		}
+	}
 
-	stfu = (stfu + 1) % 1024;
+	stfu = (stfu + 1) % 512;
 
 
 	return shm->samplepos;
