@@ -30,7 +30,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 qbool SNDDMA_Init_SDL(void);
 int SNDDMA_GetDMAPos_SDL(void);
 void SNDDMA_Shutdown_SDL(void);
-//void SNDDMA_Submit_SDL(void);
+void SNDDMA_Submit_SDL(void);
+void SNDDMA_BlockSound_SDL(void);
+void SNDDMA_UnblockSound_SDL(void);
 #endif
 
 qbool SNDDMA_Init_OSS(void);
@@ -83,8 +85,21 @@ void SNDDMA_Shutdown(void)
 void SNDDMA_Submit(void)
 {
 #ifndef __FreeBSD__
-	// SNDDMA_Submit_SDL();
+	SNDDMA_Submit_SDL();
 #endif
 	// OSS doesn't use this so no need to call it.
 }
+  
+void SNDDMA_BlockSound (void)
+{
+#ifndef __FreeBSD__
+	SNDDMA_BlockSound_SDL();
+#endif
+}
 
+void SNDDMA_UnblockSound (void)
+{
+#ifndef __FreeBSD__
+	SNDDMA_UnblockSound_SDL();
+#endif
+}
