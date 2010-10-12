@@ -160,6 +160,11 @@ void SNDDMA_Shutdown_SDL(void)
 	sdl_snd_initialized = 0;
 }
 
+void SNDDMA_LockBuffer_SDL (void)
+{
+	SDL_LockAudio();
+}
+
 void SNDDMA_Submit_SDL (void)
 {
 	SDL_UnlockAudio();

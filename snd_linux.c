@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 qbool SNDDMA_Init_SDL(void);
 int SNDDMA_GetDMAPos_SDL(void);
 void SNDDMA_Shutdown_SDL(void);
+void SNDDMA_LockBuffer_SDL(void);
 void SNDDMA_Submit_SDL(void);
 void SNDDMA_BlockSound_SDL(void);
 void SNDDMA_UnblockSound_SDL(void);
@@ -79,6 +80,11 @@ void SNDDMA_Shutdown(void)
 #else
 	SNDDMA_Shutdown_OSS();
 #endif
+}
+
+void SNDDMA_LockBuffer (void)
+{
+	SNDDMA_LockBuffer_SDL();
 }
 
 //Send sound to device if buffer isn't really the dma buffer
