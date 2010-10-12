@@ -41,7 +41,7 @@ static void paint_audio(void *unused, Uint8 *stream, int len)
 		return;
 
 	shm->buffer = stream;
-	//Con_Printf("len = %d, samples = %d\n", len, shm->samples);
+	//Com_Printf("len = %d, samples = %d\n", len, shm->samples);
 	shm->samplepos += len / 4; //shm->samples / (shm->format.channels * len);
 	//shm->samplepos += shm->samples * (shm->format.channels ;
 
@@ -92,7 +92,7 @@ qbool SNDDMA_Init_SDL(void)
 	
 	/* Open the audio device */
 	if ( SDL_OpenAudio(&desired, &obtained) < 0 ) {
-        	Con_Printf("Couldn't open SDL audio: %s\n", SDL_GetError());
+        	Com_Printf("Couldn't open SDL audio: %s\n", SDL_GetError());
 		return(0);
 	}
 	
@@ -100,12 +100,12 @@ qbool SNDDMA_Init_SDL(void)
 	if(obtained.format != AUDIO_U8 &&
 	   obtained.format != AUDIO_S16SYS) {
 
-		Con_Printf("Obtained format isn't desired - trying to force it.\n");
+		Com_Printf("Obtained format isn't desired - trying to force it.\n");
 
 		SDL_CloseAudio();
 
 		if ( SDL_OpenAudio(&desired, NULL) < 0 ) {
-			Con_Printf("Couldn't open SDL audio: %s\n",
+			Com_Printf("Couldn't open SDL audio: %s\n",
 				   SDL_GetError());
 			return(0);
 		}
@@ -132,7 +132,7 @@ qbool SNDDMA_Init_SDL(void)
 	shm->format.speed    = obtained.freq;
 	shm->format.channels = obtained.channels;
 	shm->samples         = obtained.samples * shm->format.channels;
-	shm->sampleframes    = obtained.samples / shm->format.channels;
+	shm->sampleframes    = obtained.samples; // / shm->format.channels;
 	shm->samplepos       = 0;
 
 	sdl_snd_initialized = 1;
@@ -151,7 +151,7 @@ void SNDDMA_Shutdown_SDL(void)
 	if(! sdl_snd_initialized)
 		return;
 
-	Con_DPrintf("SDL_Audio shutdown\n");
+	Com_DPrintf("SDL_Audio shutdown\n");
 
 	SDL_PauseAudio(1);	
 	SDL_CloseAudio();
