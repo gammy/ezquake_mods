@@ -1,2 +1,12 @@
 These files should /overwrite/ their respective counterparts in the ezquake
 source.
+
+This code replaces parts of ezquakes ALSA audio driver with SDL. 
+
+You can thus configure ezquake to use whichever sound engine SDL supports - including ALSA itself or more exotic options like pulseaudio, etc, by simply setting the s_device variable in your quake configuration.
+
+This was written because I wanted to quickly add support for pulseaudio. Since SDL supports pulseaudio (and many other sound subsystems!) this was the easiest way to do it.
+
+To tell SDL_Audio to use the pulseaudio driver, simply set
+s_device "pulse" 
+in your config.cfg.
